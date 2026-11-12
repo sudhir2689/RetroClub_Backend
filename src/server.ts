@@ -27,7 +27,7 @@ async function mainEntryFunction() {
 
   const app = express();
 
-  const corsOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000")
+  const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
