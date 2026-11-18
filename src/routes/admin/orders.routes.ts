@@ -7,6 +7,7 @@ import { ok } from "../../utils/envelope";
 import { requireFound, requireText } from "../../utils/helpers";
 import { AppError } from "../../utils/AppError";
 import { Product } from "../../models/Product";
+import { User } from "../../models/User";
 
 const ALLOWED_ORDER_STATUSES = [
   "placed",
@@ -97,6 +98,15 @@ adminOrderRouter.patch(
           },
         );
       }
+
+      foundOrder.returnedAt = new Date();
+
+      await User.updateOne(
+        { _id: foundOrder.user },
+        {
+          $inc: { points: foundOrder.totalAmount },
+        },
+      );
     }
 
     if (orderStatus === "delivered" && !foundOrder.deliveredAt) {

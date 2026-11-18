@@ -101,9 +101,9 @@ adminProductRouter.get(
       "name",
     );
 
-    requireText(product, "Product not found", 404);
+    const foundProduct = requireFound(product, "Product not found", 404);
 
-    res.json(ok(product));
+    res.json(ok(foundProduct));
   }),
 );
 
@@ -133,7 +133,7 @@ adminProductRouter.post(
 
     const existingCategory = await Category.findById(category);
 
-    requireText(existingCategory, "Category not found", 404);
+    requireFound(existingCategory, "Category not found", 404);
 
     const files = (req.files as Express.Multer.File[]) || [];
 

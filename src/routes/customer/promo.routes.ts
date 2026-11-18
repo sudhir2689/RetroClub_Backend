@@ -42,7 +42,7 @@ customerPromoRouter.post(
     }
 
     if (promo.count < 1) {
-      throw new AppError(400, "Promo code limit is already excedded");
+      throw new AppError(400, "Promo code limit is already exceeded");
     }
 
     if (orderValue < promo.minimumOrderValue) {

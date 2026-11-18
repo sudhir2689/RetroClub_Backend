@@ -2,7 +2,10 @@ import mongoose, { HydratedDocument, model, Schema, Types } from "mongoose";
 
 export type BannerItem = {
   imageUrl: string;
-  imagePublicId: string;
+  imagePublicId?: string;
+  productId?: Types.ObjectId;
+  linkUrl?: string;
+  title?: string;
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -19,7 +22,25 @@ const bannerSchema = new Schema<BannerItem>(
     },
     imagePublicId: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
+      trim: true,
+    },
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+      required: false,
+    },
+    linkUrl: {
+      type: String,
+      required: false,
+      default: "",
+      trim: true,
+    },
+    title: {
+      type: String,
+      required: false,
+      default: "",
       trim: true,
     },
     createdBy: {

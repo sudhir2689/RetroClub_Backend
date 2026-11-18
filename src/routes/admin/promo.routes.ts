@@ -48,7 +48,7 @@ function parsePromoPayload(req: Request) {
   requireText(code, "promo code is required");
 
   if (Number.isNaN(percentage) || percentage < 1 || percentage > 100) {
-    throw new AppError(400, "Percentage must be between 1 and 10");
+    throw new AppError(400, "Percentage must be between 1 and 100");
   }
 
   if (!Number.isInteger(count) || count < 1) {
@@ -56,7 +56,7 @@ function parsePromoPayload(req: Request) {
   }
 
   if (Number.isNaN(minimumOrderValue) || minimumOrderValue < 0) {
-    throw new AppError(400, "Promo count must be atleast 0 or more");
+    throw new AppError(400, "Minimum order value must be 0 or more");
   }
 
   if (Number.isNaN(startsAt.getTime())) {

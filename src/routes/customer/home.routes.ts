@@ -10,6 +10,9 @@ import { ok } from "../../utils/envelope";
 type BannerRow = {
   _id: Types.ObjectId;
   imageUrl: string;
+  productId?: Types.ObjectId;
+  linkUrl?: string;
+  title?: string;
   createdAt: Date;
 };
 
@@ -48,30 +51,37 @@ customerHomeRouter.get(
     const now = new Date();
 
     const [banners, categories, recentProducts, promos] = await Promise.all([
-      Banner.find().sort({ createdAt: -1 }).limit(6).lean<BannerRow[]>(),
+      Banner.find().sort({ createdAt: -1 }).limit(10).lean<BannerRow[]>(),
       Category.find().sort({ name: 1 }).lean<CategoryRow[]>(),
       Product.find({ status: "active" })
         .select("title brand price salePercentage images createdAt")
         .sort({ createdAt: -1 })
-        .limit(4)
+        .limit(8)
         .lean<ProductRow[]>(),
       Promo.find({
         startsAt: { $lte: now },
         endsAt: { $gte: now },
         count: { $gt: 0 },
       })
-        .sort({ createAt: -1 })
+        .sort({ createdAt: -1 })
         .limit(4)
         .lean<PromoRow[]>(),
     ]);
 
     res.json(
       ok({
-        banners: banners.map((bannerItem) => ({
-          _id: String(bannerItem._id),
-          imageUrl: bannerItem.imageUrl,
-          createAt: bannerItem.createdAt.toISOString(),
-        })),
+        banners: banners.map((bannerItem) => {
+          const productIdStr = bannerItem.productId ? String(bannerItem.productId) : undefined;
+          return {
+            _id: String(bannerItem._id),
+            imageUrl: bannerItem.imageUrl,
+            productId: productIdStr,
+            linkUrl: bannerItem.linkUrl || (productIdStr ? `/collection/${productIdStr}` : ""),
+            title: bannerItem.title || "",
+            createdAt: bannerItem.createdAt ? bannerItem.createdAt.toISOString() : new Date().toISOString(),
+            createAt: bannerItem.createdAt ? bannerItem.createdAt.toISOString() : new Date().toISOString(),
+          };
+        }),
         categories: categories.map((categoryItem) => ({
           _id: String(categoryItem._id),
           name: categoryItem.name,
@@ -98,7 +108,8 @@ customerHomeRouter.get(
             price: recentProductItem.price,
             finalPrice,
             salePercentage: recentProductItem.salePercentage,
-            createAt: recentProductItem.createdAt.toISOString(),
+            createdAt: recentProductItem.createdAt ? recentProductItem.createdAt.toISOString() : new Date().toISOString(),
+            createAt: recentProductItem.createdAt ? recentProductItem.createdAt.toISOString() : new Date().toISOString(),
           };
         }),
         coupons: promos.map((promoItem) => ({

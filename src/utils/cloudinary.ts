@@ -50,3 +50,12 @@ export async function uploadManyBuffersToCloudinary(
     files.map((file) => uploadSingleBufferToCloudinary(file, folder)),
   );
 }
+
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error("Cloudinary delete error:", err);
+  }
+}
