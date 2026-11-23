@@ -15,9 +15,13 @@ type CustomerOrderRow = {
   totalAmount: number;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  expectedDeliveryDate?: Date | null;
   paidAt?: Date | null;
   deliveredAt?: Date | null;
   returnedAt?: Date | null;
+  cancelledAt?: Date | null;
+  refundedAt?: Date | null;
+  cancellationNote?: string;
   createdAt: Date;
 };
 
@@ -32,7 +36,7 @@ customerOrderRouter.get(
 
     const orders = await Order.find({ user: dbUser._id })
       .select(
-        "totalItems totalAmount paymentStatus orderStatus  paidAt deliveredAt returnedAt createdAt",
+        "totalItems totalAmount paymentStatus orderStatus expectedDeliveryDate paidAt deliveredAt returnedAt cancelledAt refundedAt cancellationNote createdAt",
       )
       .sort({ createdAt: -1 })
       .lean<CustomerOrderRow[]>();
@@ -46,9 +50,13 @@ customerOrderRouter.get(
           totalAmount: orderItem.totalAmount,
           paymentStatus: orderItem.paymentStatus,
           orderStatus: orderItem.orderStatus,
+          expectedDeliveryDate: orderItem.expectedDeliveryDate,
           paidAt: orderItem.paidAt,
           deliveredAt: orderItem.deliveredAt,
           returnedAt: orderItem.returnedAt,
+          cancelledAt: orderItem.cancelledAt,
+          refundedAt: orderItem.refundedAt,
+          cancellationNote: orderItem.cancellationNote,
           createdAt: orderItem.createdAt,
         })),
       }),

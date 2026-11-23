@@ -14,6 +14,8 @@ const ALLOWED_ORDER_STATUSES = [
   "shipped",
   "delivered",
   "returned",
+  "cancelled",
+  "refunded",
 ] as const;
 
 type AdminOrderStatus = (typeof ALLOWED_ORDER_STATUSES)[number];
@@ -26,9 +28,13 @@ type AdminOrderRow = {
   totalAmount: number;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  expectedDeliveryDate?: Date | null;
   paidAt?: Date | null;
   deliveredAt?: Date | null;
   returnedAt?: Date | null;
+  cancelledAt?: Date | null;
+  refundedAt?: Date | null;
+  cancellationNote?: string;
   createdAt: Date;
 };
 
@@ -41,7 +47,7 @@ adminOrderRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const orders = await Order.find()
       .select(
-        "customerName customerEmail totalItems totalAmount paymentStatus orderStatus  paidAt deliveredAt returnedAt createdAt",
+        "customerName customerEmail totalItems totalAmount paymentStatus orderStatus expectedDeliveryDate paidAt deliveredAt returnedAt cancelledAt refundedAt cancellationNote createdAt",
       )
       .sort({ createdAt: -1 })
       .lean<AdminOrderRow[]>();
@@ -57,11 +63,38 @@ adminOrderRouter.get(
           totalAmount: orderItem.totalAmount,
           paymentStatus: orderItem.paymentStatus,
           orderStatus: orderItem.orderStatus,
+          expectedDeliveryDate: orderItem.expectedDeliveryDate,
           paidAt: orderItem.paidAt,
           deliveredAt: orderItem.deliveredAt,
           returnedAt: orderItem.returnedAt,
+          cancelledAt: orderItem.cancelledAt,
+          refundedAt: orderItem.refundedAt,
+          cancellationNote: orderItem.cancellationNote,
           createdAt: orderItem.createdAt,
         })),
+      }),
+    );
+  }),
+);
+
+adminOrderRouter.patch(
+  "/orders/:orderId/delivery-date",
+  asyncHandler(async (req: Request, res: Response) => {
+    const orderId = String(req.params.orderId || "").trim();
+    const rawDate = req.body.expectedDeliveryDate;
+
+    requireText(orderId, "Order Id is required");
+
+    const order = await Order.findById(orderId);
+    const foundOrder = requireFound(order, "Order not found", 404);
+
+    foundOrder.expectedDeliveryDate = rawDate ? new Date(rawDate) : null;
+    await foundOrder.save();
+
+    res.json(
+      ok({
+        _id: String(foundOrder._id),
+        expectedDeliveryDate: foundOrder.expectedDeliveryDate,
       }),
     );
   }),
@@ -85,10 +118,25 @@ adminOrderRouter.patch(
     const order = await Order.findById(orderId);
     const foundOrder = requireFound(order, "Order not found", 404);
 
+    // admin can cancel order -> restore product stock, set cancellation note
+    if (orderStatus === "cancelled" && foundOrder.orderStatus !== "cancelled") {
+      for (const item of foundOrder.items) {
+        await Product.updateOne(
+          { _id: item.product },
+          {
+            $inc: { stock: item.quantity },
+          },
+        );
+      }
+
+      foundOrder.cancelledAt = new Date();
+      foundOrder.cancellationNote =
+        "Refund will be transferred to your original bank account";
+    }
+
     // admin can return order -> increase the product quantity
     // update returnedAt property
     // add the points to that user points
-
     if (orderStatus === "returned" && foundOrder.orderStatus !== "returned") {
       for (const item of foundOrder.items) {
         await Product.updateOne(
@@ -109,6 +157,10 @@ adminOrderRouter.patch(
       );
     }
 
+    if (orderStatus === "refunded") {
+      foundOrder.refundedAt = new Date();
+    }
+
     if (orderStatus === "delivered" && !foundOrder.deliveredAt) {
       foundOrder.deliveredAt = new Date();
     }
@@ -120,8 +172,12 @@ adminOrderRouter.patch(
       ok({
         _id: String(foundOrder._id),
         orderStatus: foundOrder.orderStatus,
+        expectedDeliveryDate: foundOrder.expectedDeliveryDate,
         deliveredAt: foundOrder.deliveredAt,
         returnedAt: foundOrder.returnedAt,
+        cancelledAt: foundOrder.cancelledAt,
+        refundedAt: foundOrder.refundedAt,
+        cancellationNote: foundOrder.cancellationNote,
       }),
     );
   }),

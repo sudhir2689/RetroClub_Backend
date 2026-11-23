@@ -1,7 +1,13 @@
 import mongoose, { HydratedDocument, model, Schema, Types } from "mongoose";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
-export type OrderStatus = "placed" | "shipped" | "delivered" | "returned";
+export type OrderStatus =
+  | "placed"
+  | "shipped"
+  | "delivered"
+  | "returned"
+  | "cancelled"
+  | "refunded";
 
 export type OrderItem = {
   product: Types.ObjectId;
@@ -21,11 +27,15 @@ export type Order = {
   totalAmount: number;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  expectedDeliveryDate?: Date | null;
   razorpayOrderId: string;
   paymentId?: string;
   paidAt?: Date | null;
   deliveredAt?: Date | null;
   returnedAt?: Date | null;
+  cancelledAt?: Date | null;
+  refundedAt?: Date | null;
+  cancellationNote?: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -108,8 +118,19 @@ const OrderSchema = new Schema<Order>(
     },
     orderStatus: {
       type: String,
-      enum: ["placed", "shipped", "delivered", "returned"],
+      enum: [
+        "placed",
+        "shipped",
+        "delivered",
+        "returned",
+        "cancelled",
+        "refunded",
+      ],
       default: "placed",
+    },
+    expectedDeliveryDate: {
+      type: Date,
+      default: null,
     },
     razorpayOrderId: {
       type: String,
@@ -132,6 +153,19 @@ const OrderSchema = new Schema<Order>(
     returnedAt: {
       type: Date,
       default: null,
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
+    cancellationNote: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   { timestamps: true },
