@@ -9,8 +9,22 @@ import { AppError } from "../../utils/AppError";
 import { Product } from "../../models/Product";
 import { User } from "../../models/User";
 
+type CustomerOrderItemDetail = {
+  productId: string;
+  title: string;
+  brand: string;
+  price: number;
+  salePercentage: number;
+  imageUrl: string;
+  quantity: number;
+};
+
 type CustomerOrderRow = {
   _id: Types.ObjectId;
+  items: Array<{
+    product: any;
+    quantity: number;
+  }>;
   totalItems: number;
   totalAmount: number;
   paymentStatus: PaymentStatus;
@@ -36,8 +50,9 @@ customerOrderRouter.get(
 
     const orders = await Order.find({ user: dbUser._id })
       .select(
-        "totalItems totalAmount paymentStatus orderStatus expectedDeliveryDate paidAt deliveredAt returnedAt cancelledAt refundedAt cancellationNote createdAt",
+        "items totalItems totalAmount paymentStatus orderStatus expectedDeliveryDate paidAt deliveredAt returnedAt cancelledAt refundedAt cancellationNote createdAt",
       )
+      .populate("items.product", "title brand price salePercentage images")
       .sort({ createdAt: -1 })
       .lean<CustomerOrderRow[]>();
 
@@ -58,6 +73,29 @@ customerOrderRouter.get(
           refundedAt: orderItem.refundedAt,
           cancellationNote: orderItem.cancellationNote,
           createdAt: orderItem.createdAt,
+          orderItems: (orderItem.items || []).map((it) => {
+            const prod =
+              it.product && typeof it.product === "object"
+                ? it.product
+                : null;
+            const coverImg =
+              prod?.images?.find((img: any) => img.isCover)?.url ||
+              prod?.images?.[0]?.url ||
+              "";
+            return {
+              productId: prod
+                ? String(prod._id)
+                : it.product
+                  ? String(it.product)
+                  : "",
+              title: prod?.title || "Vintage Football Jersey",
+              brand: prod?.brand || "",
+              price: prod?.price || 0,
+              salePercentage: prod?.salePercentage || 0,
+              imageUrl: coverImg,
+              quantity: it.quantity || 1,
+            };
+          }),
         })),
       }),
     );
