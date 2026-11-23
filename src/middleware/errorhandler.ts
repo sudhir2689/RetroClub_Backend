@@ -12,7 +12,13 @@ export function errorHandler(
     return res.status(err.statusCode).json(fail(err.message, "APP_ERROR"));
   }
 
-  console.error("error", err);
+  console.error("Backend Error:", err);
 
-  return res.status(500).json(fail("Internal server error", "INTERNAL"));
+  const errorObj = err as any;
+  const message =
+    errorObj?.error?.description ||
+    errorObj?.message ||
+    "Internal server error";
+
+  return res.status(500).json(fail(message, "INTERNAL"));
 }

@@ -165,11 +165,21 @@ customerCheckoutRouter.post(
 
     const totalAmount = Math.max(subTotal - discountAmount, 0);
 
-    const razorpayOrder = await razorpay.orders.create({
-      amount: toSubUnits(totalAmount),
-      currency: "INR",
-      receipt: `Order_${Date.now()}`,
-    });
+    let razorpayOrder;
+    try {
+      razorpayOrder = await razorpay.orders.create({
+        amount: toSubUnits(totalAmount),
+        currency: "INR",
+        receipt: `Order_${Date.now()}`,
+      });
+    } catch (rzpErr: any) {
+      console.error("Razorpay order creation failed:", rzpErr);
+      const rzpDesc =
+        rzpErr?.error?.description ||
+        rzpErr?.message ||
+        "Failed to create Razorpay order";
+      throw new AppError(400, `Razorpay error: ${rzpDesc}`);
+    }
 
     const deliveryAddress = [
       selectedAddress.address,
@@ -181,12 +191,12 @@ customerCheckoutRouter.post(
 
     const order = await Order.create({
       user: dbUser._id,
-      customerName: foundUser.name || selectedAddress.fullName,
+      customerName: foundUser.name || selectedAddress.fullName || "Customer",
       customerEmail: foundUser.email || "",
       items,
       totalItems,
-      deliveryName: selectedAddress.fullName,
-      deliveryAddress,
+      deliveryName: selectedAddress.fullName || "Customer",
+      deliveryAddress: deliveryAddress || "N/A",
       promoCode: appliedPromoCode,
       discountAmount,
       totalAmount,
