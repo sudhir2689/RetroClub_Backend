@@ -153,8 +153,13 @@ adminOrderRouter.patch(
     // admin can cancel order -> restore product stock, set cancellation note
     if (orderStatus === "cancelled" && foundOrder.orderStatus !== "cancelled") {
       for (const item of foundOrder.items) {
+        const prod = await Product.findById(item.product);
         const incDoc: Record<string, number> = { stock: item.quantity };
-        if (item.size) {
+        if (
+          item.size &&
+          prod?.sizeStock &&
+          typeof prod.sizeStock[item.size] === "number"
+        ) {
           incDoc[`sizeStock.${item.size}`] = item.quantity;
         }
         await Product.updateOne(
@@ -175,8 +180,13 @@ adminOrderRouter.patch(
     // add the points to that user points
     if (orderStatus === "returned" && foundOrder.orderStatus !== "returned") {
       for (const item of foundOrder.items) {
+        const prod = await Product.findById(item.product);
         const incDoc: Record<string, number> = { stock: item.quantity };
-        if (item.size) {
+        if (
+          item.size &&
+          prod?.sizeStock &&
+          typeof prod.sizeStock[item.size] === "number"
+        ) {
           incDoc[`sizeStock.${item.size}`] = item.quantity;
         }
         await Product.updateOne(

@@ -202,10 +202,17 @@ customerCartWishlistRouter.post(
       sizeValue,
     );
 
-    if (quantity > foundProduct.stock) {
+    const effectiveMaxStock =
+      size &&
+      foundProduct.sizeStock &&
+      typeof foundProduct.sizeStock[size] === "number"
+        ? Math.min(foundProduct.stock, foundProduct.sizeStock[size])
+        : foundProduct.stock;
+
+    if (quantity > effectiveMaxStock) {
       throw new AppError(
         400,
-        "Quantity is more than the stock of this product",
+        "Quantity is more than the available stock for this product/size",
       );
     }
 
@@ -222,13 +229,13 @@ customerCartWishlistRouter.post(
       isSameCartItem(item, String(foundProduct._id), color, size),
     );
 
-    if (itemIndex > 0) {
+    if (itemIndex >= 0) {
       const nextQuantity = cart.items[itemIndex].quantity + quantity;
 
-      if (nextQuantity > foundProduct.stock) {
+      if (nextQuantity > effectiveMaxStock) {
         throw new AppError(
           400,
-          "Quantity is more than the stock of this product",
+          "Quantity is more than the available stock for this product/size",
         );
       }
 
@@ -282,10 +289,17 @@ customerCartWishlistRouter.patch(
       throw new AppError(400, "Cart item not found here");
     }
 
-    if (foundCart.items[itemIndex].quantity + 1 > foundProduct.stock) {
+    const effectiveMaxStock =
+      size &&
+      foundProduct.sizeStock &&
+      typeof foundProduct.sizeStock[size] === "number"
+        ? Math.min(foundProduct.stock, foundProduct.sizeStock[size])
+        : foundProduct.stock;
+
+    if (foundCart.items[itemIndex].quantity + 1 > effectiveMaxStock) {
       throw new AppError(
         400,
-        "Quantity is more than the stock of this product",
+        "Quantity is more than the available stock for this product/size",
       );
     }
 

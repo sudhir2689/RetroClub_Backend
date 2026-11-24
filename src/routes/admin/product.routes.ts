@@ -7,7 +7,10 @@ import { ok } from "../../utils/envelope";
 import { requireFound, requireNumber, requireText } from "../../utils/helpers";
 import { Product } from "../../models/Product";
 import { AppError } from "../../utils/AppError";
-import { uploadManyBuffersToCloudinary } from "../../utils/cloudinary";
+import {
+  uploadManyBuffersToCloudinary,
+  deleteFromCloudinary,
+} from "../../utils/cloudinary";
 
 type UploadedImage = {
   url: string;
@@ -245,13 +248,42 @@ adminProductRouter.put(
       isCover: false,
     }));
 
-    let existingImages: UploadedImage[] = product.images.map(
-      (img: UploadedImage) => ({
+    let existingImages: UploadedImage[] = [];
+
+    if (req.body.existingImages !== undefined) {
+      try {
+        const parsed =
+          typeof req.body.existingImages === "string"
+            ? JSON.parse(req.body.existingImages)
+            : req.body.existingImages;
+        if (Array.isArray(parsed)) {
+          existingImages = parsed.map((img: any) => ({
+            url: String(img.url || ""),
+            publicId: String(img.publicId || ""),
+            isCover: Boolean(img.isCover),
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to parse existingImages:", err);
+      }
+    } else {
+      existingImages = product.images.map((img: UploadedImage) => ({
         url: img.url,
         publicId: img.publicId,
         isCover: img.isCover,
-      }),
+      }));
+    }
+
+    // Clean up removed images from Cloudinary storage
+    const keptPublicIds = new Set(existingImages.map((img) => img.publicId));
+    const removedImages = product.images.filter(
+      (img: UploadedImage) => !keptPublicIds.has(img.publicId),
     );
+    for (const removed of removedImages) {
+      if (removed.publicId) {
+        void deleteFromCloudinary(removed.publicId);
+      }
+    }
 
     const mergedImages: UploadedImage[] = [
       ...existingImages,
@@ -262,15 +294,22 @@ adminProductRouter.put(
       throw new AppError(400, "Atleast one img is needed");
     }
 
-    const finalImages: UploadedImage[] = mergedImages.map(
-      (image: UploadedImage, index) => ({
+    let hasCover = false;
+    const finalImages: UploadedImage[] = mergedImages.map((image) => {
+      const isCover = coverImagePublicId
+        ? image.publicId === coverImagePublicId
+        : false;
+      if (isCover) hasCover = true;
+      return {
         url: image.url,
         publicId: image.publicId,
-        isCover: coverImagePublicId
-          ? image.publicId === coverImagePublicId
-          : index === 0,
-      }),
-    );
+        isCover,
+      };
+    });
+
+    if (!hasCover && finalImages.length > 0) {
+      finalImages[0].isCover = true;
+    }
 
     product.title = title;
     product.description = description;

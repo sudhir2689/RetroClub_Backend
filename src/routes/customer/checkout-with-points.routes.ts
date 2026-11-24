@@ -205,8 +205,17 @@ customerCheckoutWithPointsRouter.post(
 
     try {
       for (const item of items) {
+        const prod = await Product.findById(item.product);
+        if (!prod || prod.stock < item.quantity) {
+          throw new AppError(400, "One or more cart items are out of stock");
+        }
+
         const incDoc: Record<string, number> = { stock: -item.quantity };
-        if (item.size) {
+        if (
+          item.size &&
+          prod.sizeStock &&
+          typeof prod.sizeStock[item.size] === "number"
+        ) {
           incDoc[`sizeStock.${item.size}`] = -item.quantity;
         }
 
