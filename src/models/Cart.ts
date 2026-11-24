@@ -35,7 +35,7 @@ const cartItemSchema = new Schema<CartItem>(
     },
     size: {
       type: String,
-      enum: ["S", "M", "L", "XL"],
+      enum: ["S", "M", "L", "XL", "2XL"],
     },
   },
   { _id: false },

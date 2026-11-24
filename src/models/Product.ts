@@ -6,7 +6,7 @@ export type ProductImage = {
   isCover: boolean;
 };
 
-export type ProductSize = "S" | "M" | "L" | "XL";
+export type ProductSize = "S" | "M" | "L" | "XL" | "2XL";
 export type ProductStatus = "active" | "inactive";
 
 export type Product = {
@@ -88,7 +88,7 @@ const ProductSchema = new mongoose.Schema(
     sizes: {
       type: [String],
       default: [],
-      enum: ["S", "M", "L", "XL"],
+      enum: ["S", "M", "L", "XL", "2XL"],
     },
     price: {
       type: Number,
