@@ -18,6 +18,7 @@ export type Product = {
   images: ProductImage[];
   colors: string[];
   sizes: ProductSize[];
+  sizeStock?: Record<string, number>;
   price: number;
   salePercentage: number;
   status: ProductStatus;
@@ -89,6 +90,10 @@ const ProductSchema = new mongoose.Schema(
       type: [String],
       default: [],
       enum: ["S", "M", "L", "XL", "2XL"],
+    },
+    sizeStock: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
     price: {
       type: Number,

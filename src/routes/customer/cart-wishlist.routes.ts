@@ -103,7 +103,11 @@ async function getWishlistResponse(userId: string) {
 }
 
 function getSelectedvariant(
-  product: { colors: string[]; sizes: ProductSize[] },
+  product: {
+    colors: string[];
+    sizes: ProductSize[];
+    sizeStock?: Record<string, number>;
+  },
   colorValue: string,
   sizeValue: string,
 ) {
@@ -129,6 +133,14 @@ function getSelectedvariant(
 
     if (!product.sizes.includes(sizeValue as ProductSize)) {
       throw new AppError(400, "Selected size is invalid");
+    }
+
+    if (
+      product.sizeStock &&
+      typeof product.sizeStock[sizeValue] === "number" &&
+      product.sizeStock[sizeValue] <= 0
+    ) {
+      throw new AppError(400, `Size ${sizeValue} is currently out of stock`);
     }
 
     size = sizeValue as ProductSize;

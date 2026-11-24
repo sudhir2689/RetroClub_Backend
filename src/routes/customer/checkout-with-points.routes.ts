@@ -148,6 +148,8 @@ customerCheckoutWithPointsRouter.post(
       return {
         product: cartItem.product,
         quantity: cartItem.quantity,
+        size: cartItem.size,
+        color: cartItem.color,
       };
     });
 
@@ -203,13 +205,18 @@ customerCheckoutWithPointsRouter.post(
 
     try {
       for (const item of items) {
+        const incDoc: Record<string, number> = { stock: -item.quantity };
+        if (item.size) {
+          incDoc[`sizeStock.${item.size}`] = -item.quantity;
+        }
+
         const updated = await Product.updateOne(
           {
             _id: item.product,
             stock: { $gte: item.quantity },
           },
           {
-            $inc: { stock: -item.quantity },
+            $inc: incDoc,
           },
         );
 

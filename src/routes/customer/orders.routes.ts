@@ -17,6 +17,8 @@ type CustomerOrderItemDetail = {
   salePercentage: number;
   imageUrl: string;
   quantity: number;
+  size?: string;
+  color?: string;
 };
 
 type CustomerOrderRow = {
@@ -24,6 +26,8 @@ type CustomerOrderRow = {
   items: Array<{
     product: any;
     quantity: number;
+    size?: string;
+    color?: string;
   }>;
   totalItems: number;
   totalAmount: number;
@@ -94,6 +98,8 @@ customerOrderRouter.get(
               salePercentage: prod?.salePercentage || 0,
               imageUrl: coverImg,
               quantity: it.quantity || 1,
+              size: it.size || undefined,
+              color: it.color || undefined,
             };
           }),
         })),

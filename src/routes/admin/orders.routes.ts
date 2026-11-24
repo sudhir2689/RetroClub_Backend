@@ -27,6 +27,8 @@ type AdminOrderRow = {
   items: Array<{
     product: any;
     quantity: number;
+    size?: string;
+    color?: string;
   }>;
   totalItems: number;
   totalAmount: number;
@@ -97,6 +99,8 @@ adminOrderRouter.get(
               salePercentage: prod?.salePercentage || 0,
               imageUrl: coverImg,
               quantity: it.quantity || 1,
+              size: it.size || undefined,
+              color: it.color || undefined,
             };
           }),
         })),
@@ -149,10 +153,14 @@ adminOrderRouter.patch(
     // admin can cancel order -> restore product stock, set cancellation note
     if (orderStatus === "cancelled" && foundOrder.orderStatus !== "cancelled") {
       for (const item of foundOrder.items) {
+        const incDoc: Record<string, number> = { stock: item.quantity };
+        if (item.size) {
+          incDoc[`sizeStock.${item.size}`] = item.quantity;
+        }
         await Product.updateOne(
           { _id: item.product },
           {
-            $inc: { stock: item.quantity },
+            $inc: incDoc,
           },
         );
       }
@@ -167,10 +175,14 @@ adminOrderRouter.patch(
     // add the points to that user points
     if (orderStatus === "returned" && foundOrder.orderStatus !== "returned") {
       for (const item of foundOrder.items) {
+        const incDoc: Record<string, number> = { stock: item.quantity };
+        if (item.size) {
+          incDoc[`sizeStock.${item.size}`] = item.quantity;
+        }
         await Product.updateOne(
           { _id: item.product },
           {
-            $inc: { stock: item.quantity },
+            $inc: incDoc,
           },
         );
       }

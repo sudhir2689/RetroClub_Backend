@@ -12,6 +12,8 @@ export type OrderStatus =
 export type OrderItem = {
   product: Types.ObjectId;
   quantity: number;
+  size?: string;
+  color?: string;
 };
 
 export type Order = {
@@ -54,6 +56,14 @@ const OrderItemsSchema = new Schema<OrderItem>(
 
       required: true,
       min: 1,
+    },
+    size: {
+      type: String,
+      trim: true,
+    },
+    color: {
+      type: String,
+      trim: true,
     },
   },
   { _id: false },

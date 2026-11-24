@@ -121,6 +121,15 @@ adminProductRouter.post(
     const status = String(req.body.status || "active").trim();
     const colors = req.body.colors || [];
     const sizes = req.body.sizes || [];
+    let sizeStock: Record<string, number> = {};
+    if (req.body.sizeStock) {
+      try {
+        sizeStock =
+          typeof req.body.sizeStock === "string"
+            ? JSON.parse(req.body.sizeStock)
+            : req.body.sizeStock;
+      } catch {}
+    }
 
     requireText(title, "Title is required");
     requireText(description, "Description is required");
@@ -161,6 +170,7 @@ adminProductRouter.post(
       images,
       colors,
       sizes,
+      sizeStock,
       price,
       salePercentage,
       stock,
@@ -194,6 +204,15 @@ adminProductRouter.put(
       | "inactive";
     const colors = req.body.colors || [];
     const sizes = req.body.sizes || [];
+    let sizeStock: Record<string, number> = {};
+    if (req.body.sizeStock) {
+      try {
+        sizeStock =
+          typeof req.body.sizeStock === "string"
+            ? JSON.parse(req.body.sizeStock)
+            : req.body.sizeStock;
+      } catch {}
+    }
     const coverImagePublicId = String(req.body.coverImagePublicId || "").trim();
 
     requireText(title, "Title is required");
@@ -259,6 +278,7 @@ adminProductRouter.put(
     product.brand = brand;
     product.colors = colors;
     product.sizes = sizes;
+    product.sizeStock = sizeStock;
     product.price = price;
     product.salePercentage = salePercentage;
     product.stock = stock;
