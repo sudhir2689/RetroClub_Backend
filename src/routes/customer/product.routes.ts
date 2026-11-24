@@ -90,9 +90,12 @@ customerProductRouter.get(
 
     const foundProduct = requireFound(product, "Product not found", 404);
 
+    const categoryId =
+      (foundProduct.category as any)?._id || foundProduct.category;
+
     const relatedProducts = await Product.find({
       _id: { $ne: foundProduct._id },
-      category: foundProduct.category,
+      category: categoryId,
       status: "active",
     })
       .populate("category", "name")
